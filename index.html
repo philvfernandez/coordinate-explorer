@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordinate Grid Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-mid: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text-sec: #6b6b66;
+    --text-hint: #a8a8a0;
+    --blue: #2563eb;
+    --blue-bg: #eff6ff;
+    --blue-text: #1d4ed8;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --pink: #db2777;
+    --purple: #7c3aed;
+    --teal: #0d9488;
+    --accent: #2563eb;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18181b;
+      --surface: #1f1f23;
+      --border: rgba(255,255,255,0.08);
+      --border-mid: rgba(255,255,255,0.15);
+      --text: #f0f0ec;
+      --text-sec: #9a9a94;
+      --text-hint: #5a5a55;
+      --blue: #60a5fa;
+      --blue-bg: #1e3a5f;
+      --blue-text: #93c5fd;
+      --green: #4ade80;
+      --amber: #fbbf24;
+      --red: #f87171;
+      --pink: #f472b6;
+      --purple: #a78bfa;
+      --teal: #2dd4bf;
+    }
+  }
+
+  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+
+  header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  header p { font-size: 13px; color: var(--text-sec); }
+
+  .main { display: flex; flex: 1; gap: 0; }
+
+  .sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section h2 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-hint);
+    margin-bottom: 10px;
+  }
+
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  .mode-tab {
+    padding: 7px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-sec);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .mode-tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  }
+  .mode-tab:hover:not(.active) { color: var(--text); }
+
+  .field-group { display: flex; flex-direction: column; gap: 8px; }
+
+  .field-row { display: flex; gap: 8px; align-items: center; }
+  .field-label { font-size: 13px; color: var(--text-sec); width: 20px; flex-shrink: 0; }
+
+  input[type=number], input[type=text], select {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 7px 10px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input[type=number] { width: 80px; }
+  input:focus, select:focus { border-color: var(--accent); }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-mid);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface); border-color: var(--border-mid); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { opacity: 0.88; background: var(--accent); }
+  .btn-danger { color: var(--red); }
+  .btn-danger:hover { border-color: var(--red); }
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .points-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 28px;
+  }
+  .point-chip {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border-mid);
+    background: var(--bg);
+    color: var(--text-sec);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .point-chip:hover { border-color: var(--red); color: var(--red); }
+
+  .info-card {
+    background: var(--blue-bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--blue-text);
+    line-height: 1.5;
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; }
+  .slider-row label { font-size: 13px; color: var(--text-sec); flex-shrink: 0; }
+  input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+  }
+  .slider-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 26px;
+    text-align: right;
+  }
+
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+    min-height: 400px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-hint);
+    font-family: 'DM Mono', monospace;
+    height: 22px;
+  }
+  .status-coord { color: var(--text-sec); }
+
+  .tip-text {
+    font-size: 12px;
+    color: var(--text-hint);
+    line-height: 1.5;
+  }
+
+  select {
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: flex; flex-direction: column; gap: 10px; }
+
+  @media (max-width: 640px) {
+    .main { flex-direction: column; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+    .canvas-area { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 20 20"><line x1="10" y1="2" x2="10" y2="18"/><line x1="2" y1="10" x2="18" y2="10"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="13" r="2"/><circle cx="15" cy="14" r="2"/></svg>
+  </div>
+  <div>
+    <h1>Coordinate Grid Explorer</h1>
+    <p>Plot points, discover patterns, see the beauty of coordinates</p>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <h2>Mode</h2>
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('plot')">Plot</button>
+        <button class="mode-tab" onclick="setMode('pattern')">Pattern</button>
+        <button class="mode-tab" onclick="setMode('draw')">Draw</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1">
+
+      <div id="panel-plot" class="panel active">
+        <h2 style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-hint);margin-bottom:4px;">Add a point</h2>
+        <div class="field-row">
+          <span class="field-label">x:</span>
+          <input type="number" id="px" value="3" min="-10" max="10" step="1" style="width:80px">
+          <span class="field-label" style="margin-left:4px">y:</span>
+          <input type="number" id="py" value="4" min="-10" max="10" step="1" style="width:80px">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="addManualPoint()">Add point</button>
+          <button class="btn" onclick="animatePoints()">Play ▶</button>
+          <button class="btn btn-danger" onclick="clearPoints()">Clear</button>
+        </div>
+        <div style="margin-top:4px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-hint);margin-bottom:6px;">Paste a list</div>
+          <input type="text" id="plist" placeholder="(1,2),(3,4),(5,6)" style="width:100%;margin-bottom:6px">
+          <button class="btn" onclick="parsePastedPoints()" style="width:100%">Add all points</button>
+        </div>
+        <div id="points-display" class="points-list" style="margin-top:6px"></div>
+        <p class="tip-text" style="margin-top:6px">Click a point badge to remove it.</p>
+      </div>
+
+      <div id="panel-pattern" class="panel">
+        <h2 style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-hint);margin-bottom:4px;">Pattern</h2>
+        <select id="pattern-select" onchange="loadPattern()" style="width:100%;margin-bottom:8px">
+          <option value="star">Star polygon</option>
+          <option value="spiral">Growing spiral</option>
+          <option value="wave">Sine wave</option>
+          <option value="circle">Circle from points</option>
+          <option value="diamond">Diamond grid</option>
+          <option value="times-table">Times table art</option>
+        </select>
+        <div class="slider-row">
+          <label>Points</label>
+          <input type="range" id="pt-count" min="3" max="60" value="12" step="1" oninput="updatePCount()">
+          <span class="slider-val" id="pt-count-out">12</span>
+        </div>
+        <div class="btn-row" style="margin-top:6px">
+          <button class="btn btn-primary" onclick="animatePoints()">Play ▶</button>
+          <button class="btn btn-danger" onclick="clearPoints()">Clear</button>
+        </div>
+        <div class="info-card" id="pattern-desc" style="margin-top:8px;font-size:12px"></div>
+      </div>
+
+      <div id="panel-draw" class="panel">
+        <div class="info-card">Click anywhere on the grid to drop a point. The coordinates appear instantly!</div>
+        <div class="btn-row" style="margin-top:4px">
+          <button class="btn btn-primary" onclick="animatePoints()">Play ▶</button>
+          <button class="btn btn-danger" onclick="clearPoints()">Clear</button>
+        </div>
+        <div id="click-coords" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-sec);margin-top:6px">Last point: —</div>
+        <div id="draw-points-display" class="points-list" style="margin-top:8px"></div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-section">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-hint);margin-bottom:6px;">Python snippet</div>
+      <div id="python-snippet" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-sec);background:var(--bg);border-radius:var(--radius-sm);padding:10px;line-height:1.6;white-space:pre-wrap;min-height:60px"></div>
+      <p class="tip-text" style="margin-top:6px">Paste this into Python's Turtle to recreate the pattern!</p>
+    </div>
+
+  </aside>
+
+  <div class="canvas-area">
+    <div class="canvas-wrap">
+      <canvas id="grid"></canvas>
+    </div>
+    <div class="status-bar">
+      <span id="coord-readout" class="status-coord">Hover over the grid to see coordinates</span>
+      <span id="point-count"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
+let W, H, OX, OY, STEP;
+let points = [];
+let animFrame = null;
+let mode = 'plot';
+let patternName = 'star';
+let ptCount = 12;
+let animating = false;
+let animIndex = 0;
+
+function isDark() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function resize() {
+  const wrap = canvas.parentElement;
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width = W;
+  canvas.height = H;
+  OX = Math.floor(W / 2);
+  OY = Math.floor(H / 2);
+  STEP = Math.max(28, Math.min(48, Math.floor(Math.min(W, H) / 18)));
+  draw();
+}
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+  drawAxes();
+  drawPoints(points.length);
+  updatePythonSnippet();
+}
+
+function drawGrid() {
+  ctx.strokeStyle = isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 0.5;
+  for (let x = ((OX % STEP) + STEP) % STEP; x < W; x += STEP) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = ((OY % STEP) + STEP) % STEP; y < H; y += STEP) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+function drawAxes() {
+  const axisColor = isDark() ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
+  const tickColor = isDark() ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
+  const labelColor = isDark() ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
+
+  ctx.strokeStyle = axisColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, OY); ctx.lineTo(W, OY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(OX, 0); ctx.lineTo(OX, H); ctx.stroke();
+
+  ctx.font = '11px "DM Mono", monospace';
+  ctx.fillStyle = labelColor;
+
+  // X axis labels
+  ctx.textAlign = 'center';
+  const maxX = Math.floor((W - OX) / STEP);
+  const minX = -Math.floor(OX / STEP);
+  for (let i = minX; i <= maxX; i++) {
+    if (i === 0) continue;
+    const sx = OX + i * STEP;
+    ctx.strokeStyle = tickColor; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(sx, OY - 4); ctx.lineTo(sx, OY + 4); ctx.stroke();
+    ctx.fillStyle = labelColor;
+    ctx.fillText(i, sx, OY + 16);
+  }
+
+  // Y axis labels
+  ctx.textAlign = 'right';
+  const maxY = Math.floor(OY / STEP);
+  const minY = -Math.floor((H - OY) / STEP);
+  for (let j = minY; j <= maxY; j++) {
+    if (j === 0) continue;
+    const sy = OY - j * STEP;
+    ctx.strokeStyle = tickColor; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(OX - 4, sy); ctx.lineTo(OX + 4, sy); ctx.stroke();
+    ctx.fillStyle = labelColor;
+    ctx.fillText(j, OX - 8, sy + 4);
+  }
+
+  // Axis labels
+  ctx.fillStyle = isDark() ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)';
+  ctx.font = '13px "DM Sans", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('x', W - 20, OY - 8);
+  ctx.textAlign = 'center';
+  ctx.fillText('y', OX + 12, 18);
+  ctx.font = '11px "DM Mono", monospace';
+  ctx.fillStyle = labelColor;
+  ctx.textAlign = 'left';
+  ctx.fillText('(0,0)', OX + 6, OY + 16);
+}
+
+const PT_COLORS = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#db2777','#0d9488'];
+function ptColor(i) { return PT_COLORS[i % PT_COLORS.length]; }
+
+function drawPoints(count) {
+  const pts = points.slice(0, count);
+  if (pts.length > 1) {
+    ctx.strokeStyle = isDark() ? 'rgba(96,165,250,0.4)' : 'rgba(37,99,235,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash(mode === 'plot' ? [4, 4] : []);
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const sx = OX + p[0] * STEP, sy = OY - p[1] * STEP;
+      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    });
+    const closedPatterns = ['star','circle','diamond','times-table'];
+    if (mode === 'pattern' && closedPatterns.includes(patternName)) ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  pts.forEach((p, i) => {
+    const sx = OX + p[0] * STEP, sy = OY - p[1] * STEP;
+    const c = ptColor(i);
+    // glow ring
+    ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = c + '22'; ctx.fill();
+    // dot
+    ctx.beginPath(); ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = c; ctx.fill();
+    // label
+    ctx.fillStyle = isDark() ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.75)';
+    ctx.font = '11px "DM Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`(${roundCoord(p[0])},${roundCoord(p[1])})`, sx + 9, sy - 7);
+  });
+
+  document.getElementById('point-count').textContent = pts.length > 0 ? `${pts.length} point${pts.length !== 1 ? 's' : ''}` : '';
+}
+
+function roundCoord(v) { return Math.round(v * 10) / 10; }
+
+function addManualPoint() {
+  const x = parseInt(document.getElementById('px').value);
+  const y = parseInt(document.getElementById('py').value);
+  if (isNaN(x) || isNaN(y)) return;
+  points.push([x, y]);
+  renderPointTags();
+  draw();
+}
+
+function parsePastedPoints() {
+  const raw = document.getElementById('plist').value;
+  const matches = raw.match(/-?\d+\s*,\s*-?\d+/g) || [];
+  matches.forEach(m => {
+    const parts = m.split(',').map(s => parseInt(s.trim()));
+    if (parts.length === 2) points.push(parts);
+  });
+  document.getElementById('plist').value = '';
+  renderPointTags();
+  draw();
+}
+
+function renderPointTags() {
+  const container = mode === 'draw' ? 'draw-points-display' : 'points-display';
+  const el = document.getElementById(container);
+  if (!el) return;
+  el.innerHTML = points.map((p, i) =>
+    `<span class="point-chip" onclick="removePoint(${i})" title="Remove">(${roundCoord(p[0])},${roundCoord(p[1])})</span>`
+  ).join('');
+}
+
+function removePoint(i) {
+  points.splice(i, 1);
+  renderPointTags();
+  draw();
+}
+
+function clearPoints() {
+  points = [];
+  if (animFrame) { clearTimeout(animFrame); animating = false; }
+  renderPointTags();
+  draw();
+}
+
+function animatePoints() {
+  if (animating) { clearTimeout(animFrame); animating = false; return; }
+  if (points.length === 0) return;
+  const allPoints = [...points];
+  animating = true;
+  animIndex = 0;
+  function step() {
+    if (!animating) return;
+    ctx.clearRect(0, 0, W, H);
+    drawGrid(); drawAxes();
+    drawPoints(animIndex + 1);
+    animIndex++;
+    if (animIndex < allPoints.length) {
+      animFrame = setTimeout(step, 300);
+    } else {
+      animating = false;
+    }
+  }
+  step();
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach((b, i) => {
+    b.classList.toggle('active', ['plot','pattern','draw'][i] === m);
+  });
+  ['plot','pattern','draw'].forEach(id => {
+    document.getElementById(`panel-${id}`).classList.toggle('active', id === m);
+  });
+  clearPoints();
+  if (m === 'pattern') loadPattern();
+  updatePythonSnippet();
+}
+
+const patternDescs = {
+  star: 'Points equally spaced around a circle, connected by skipping — the skip amount creates different star shapes.',
+  spiral: 'Each point sits a little further from centre. x and y grow together following an angle rule.',
+  wave: 'The sine wave is the shape of sound, water, and light — built entirely from a coordinate pattern.',
+  circle: 'Every point is the same distance from (0,0). That rule is all a circle is!',
+  diamond: 'Rotate a square grid 45° and a diamond pattern emerges. Symmetry through coordinates.',
+  'times-table': 'Connect n×2, n×3... around a circle. Change the point count for completely different art!'
+};
+
+function loadPattern() {
+  patternName = document.getElementById('pattern-select').value;
+  document.getElementById('pattern-desc').textContent = patternDescs[patternName];
+  genPattern();
+  draw();
+}
+
+function updatePCount() {
+  ptCount = parseInt(document.getElementById('pt-count').value);
+  document.getElementById('pt-count-out').textContent = ptCount;
+  genPattern();
+  draw();
+}
+
+function genPattern() {
+  const n = ptCount;
+  const maxGX = Math.floor((W / 2 - 30) / STEP);
+  const maxGY = Math.floor((H / 2 - 30) / STEP);
+  const r = Math.max(2, Math.min(maxGX, maxGY, 7));
+  points = [];
+
+  if (patternName === 'star') {
+    const skip = Math.max(2, Math.floor(n / 3));
+    for (let i = 0; i < n; i++) {
+      const angle = (2 * Math.PI * i * skip / n) - Math.PI / 2;
+      points.push([r * Math.cos(angle), r * Math.sin(angle)]);
+    }
+  } else if (patternName === 'spiral') {
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const angle = t * 4 * Math.PI;
+      const rad = t * r;
+      points.push([rad * Math.cos(angle), rad * Math.sin(angle)]);
+    }
+  } else if (patternName === 'wave') {
+    const xRange = Math.max(3, Math.floor((W / 2 - 30) / STEP));
+    for (let i = 0; i < n; i++) {
+      const x = -xRange + i * (2 * xRange / (n - 1));
+      const y = (r * 0.65) * Math.sin(2 * Math.PI * x / (r * 1.5));
+      points.push([x, y]);
+    }
+  } else if (patternName === 'circle') {
+    for (let i = 0; i < n; i++) {
+      const angle = (2 * Math.PI * i / n) - Math.PI / 2;
+      points.push([r * Math.cos(angle), r * Math.sin(angle)]);
+    }
+  } else if (patternName === 'diamond') {
+    const side = Math.max(2, Math.min(r, 4));
+    for (let i = -side; i <= side; i++) {
+      for (let j = -side; j <= side; j++) {
+        if (Math.abs(i) + Math.abs(j) === side) points.push([i + j, i - j]);
+      }
+    }
+  } else if (patternName === 'times-table') {
+    const mult = 2;
+    for (let i = 0; i < n; i++) {
+      const a1 = (2 * Math.PI * i / n) - Math.PI / 2;
+      const a2 = (2 * Math.PI * ((i * mult) % n) / n) - Math.PI / 2;
+      points.push([r * Math.cos(a1), r * Math.sin(a1)]);
+      points.push([r * Math.cos(a2), r * Math.sin(a2)]);
+    }
+  }
+  renderPointTags();
+}
+
+function updatePythonSnippet() {
+  const el = document.getElementById('python-snippet');
+  if (points.length === 0) {
+    el.textContent = '# Add some points to see the Python code!';
+    return;
+  }
+  const coords = points.slice(0, 12).map(p => `(${roundCoord(p[0])}, ${roundCoord(p[1])})`).join(', ');
+  const more = points.length > 12 ? `\n# ... and ${points.length - 12} more` : '';
+  el.textContent = `import turtle
+t = turtle.Turtle()
+t.speed(3)
+STEP = 30
+
+points = [${coords}]${more}
+
+for x, y in points:
+    t.penup()
+    t.goto(x*STEP, y*STEP)
+    t.pendown()
+    t.dot(8, "blue")
+
+turtle.done()`;
+}
+
+canvas.addEventListener('mousemove', function(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (W / rect.width);
+  const sy = (e.clientY - rect.top) * (H / rect.height);
+  const gx = Math.round((sx - OX) / STEP);
+  const gy = Math.round((OY - sy) / STEP);
+  document.getElementById('coord-readout').textContent = `Position: (${gx}, ${gy})`;
+});
+
+canvas.addEventListener('mouseleave', function() {
+  document.getElementById('coord-readout').textContent = 'Hover over the grid to see coordinates';
+});
+
+canvas.addEventListener('click', function(e) {
+  if (mode !== 'draw') return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (W / rect.width);
+  const sy = (e.clientY - rect.top) * (H / rect.height);
+  const gx = Math.round((sx - OX) / STEP);
+  const gy = Math.round((OY - sy) / STEP);
+  points.push([gx, gy]);
+  document.getElementById('click-coords').textContent = `Last point: (${gx}, ${gy})`;
+  renderPointTags();
+  draw();
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
+window.addEventListener('resize', resize);
+
+// Init
+resize();
+setMode('plot');
+loadPattern();
+setMode('plot');
+</script>
+</body>
+</html>
